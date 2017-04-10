@@ -24,10 +24,16 @@ package de.appplant.cordova.plugin.printer;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+import android.print.PageRange;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintJob;
 import android.print.PrinterId;
+import android.support.annotation.RequiresApi;
+import android.util.Log;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -253,10 +259,25 @@ public class Printer extends CordovaPlugin {
                 return false;
             }
 
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onPageFinished (WebView webView, String url) {
                 PrintAttributes.Builder builder = new PrintAttributes.Builder();
-                PrintDocumentAdapter adapter    = getAdapter(webView, docName);
+                final PrintDocumentAdapter adapter    = getAdapter(webView, docName);
+                PrintDocumentAdapter wrapperAdapter = new PrintDocumentAdapter(){
+                    private PrintDocumentAdapter m_adapter = adapter;
+
+                    @Override
+                    public void onLayout(PrintAttributes printAttributes, PrintAttributes printAttributes1, CancellationSignal cancellationSignal, LayoutResultCallback layoutResultCallback, Bundle bundle) {
+
+                    }
+
+                    @Override
+                    public void onWrite(PageRange[] pageRanges, ParcelFileDescriptor parcelFileDescriptor, CancellationSignal cancellationSignal, WriteResultCallback writeResultCallback) {
+                        Log.d("PageRange",pageRanges.toString());
+                        m_adapter.onWrite(pageRanges,parcelFileDescriptor,cancellationSignal,writeResultCallback);
+                    }
+                } ;
 
                 builder.setMinMargins(PrintAttributes.Margins.NO_MARGINS);
 
